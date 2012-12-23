@@ -29,3 +29,9 @@ $string['stack'] = 'STACK response analysis';
 $string['stack:componentname'] = 'STACK response analysis quiz report';
 $string['stack:view'] = 'View the STACK response analysis report';
 $string['stackquestionsinthisquiz'] = 'STACK questions in this quiz';
+
+$string['questionreporting'] = 'Report on attempts at one question.';
+$string['questionreportingscore'] = 'Score';
+$string['questionreportingsummary'] = 'Input summary';
+$string['questionreportingtotal'] = 'Total';
+$string['variantx'] = 'Variant: ';

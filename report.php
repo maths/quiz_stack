@@ -37,6 +37,9 @@ require_once($CFG->dirroot . '/question/type/stack/locallib.php');
  */
 class quiz_stack_report extends quiz_attempts_report {
 
+    /** @var The quiz context. */
+    protected $context;
+
     /** @var qubaid_condition used to select the attempts to include in SQL queries. */
     protected $qubaids;
 
@@ -150,6 +153,8 @@ class quiz_stack_report extends quiz_attempts_report {
     public function display_analysis($question) {
         get_question_options($question);
 
+        $this->display_question_information($question);
+
         $dm = new question_engine_data_mapper();
         $this->attempts = $dm->load_attempts_at_question($question->id, $this->qubaids);
 
@@ -179,7 +184,7 @@ class quiz_stack_report extends quiz_attempts_report {
             $i++;
             $tablehead[] = $i;
         }
-        $tablehead[] = stack_string('questionreportingtotal');
+        $tablehead[] = format_string(get_string('questionreportingtotal', 'quiz_stack'));
         echo html_writer::tag('ol', $list);
 
         // Complete anwernotes
@@ -197,15 +202,14 @@ class quiz_stack_report extends quiz_attempts_report {
             $inputstable->data[] = array_merge(array($anote), $a, array(array_sum($a)));
         }
         echo html_writer::table($inputstable);
-        
 
         // Results for each question note
         foreach ($this->qnotes as $qnote) {
-            echo html_writer::tag('h2', stack_string('variantx', $qnote));
+            echo html_writer::tag('h2', get_string('variantx', 'quiz_stack').stack_ouput_castext($qnote));
 
             $inputstable = new html_table();
             $inputstable->attributes['class'] = 'generaltable stacktestsuite';
-            $inputstable->head = array_merge(array(stack_string('questionreportingsummary'), '', stack_string('questionreportingscore')), $this->prts);
+            $inputstable->head = array_merge(array(get_string('questionreportingsummary', 'quiz_stack'), '', get_string('questionreportingscore', 'quiz_stack')), $this->prts);
             foreach ($results[$qnote] as $dsummary => $summary) {
                 foreach ($summary as $key => $res) {
                     $inputstable->data[] = array_merge(array($dsummary, $res['count'], $res['fraction']), $res['answernotes']);
@@ -383,5 +387,31 @@ class quiz_stack_report extends quiz_attempts_report {
             return $rdata;
         }
         return false;
+    }
+
+    /*
+     * This function simply prints out some useful information about the question.
+     */
+    private function display_question_information($question) {
+        global $OUTPUT;
+
+        echo $OUTPUT->heading($question->name, 3);
+
+        // Display the question variables.
+        echo $OUTPUT->heading(stack_string('questionvariables'), 3);
+        echo html_writer::start_tag('div', array('class' => 'questionvariables'));
+        $opts = $question->options;
+        echo  html_writer::tag('pre', htmlspecialchars($opts->questionvariables));
+        echo html_writer::end_tag('div');
+
+        echo $OUTPUT->heading(stack_string('questiontext'), 3);
+        echo html_writer::tag('div', html_writer::tag('div', stack_ouput_castext($question->questiontext),
+        array('class' => 'outcome generalfeedback')), array('class' => 'que'));
+
+        echo $OUTPUT->heading(stack_string('generalfeedback'), 3);
+        echo html_writer::tag('div', html_writer::tag('div', stack_ouput_castext($question->generalfeedback),
+        array('class' => 'outcome generalfeedback')), array('class' => 'que'));
+
+        echo $OUTPUT->heading(get_string('pluginname', 'quiz_stack'), 3);
     }
 }
