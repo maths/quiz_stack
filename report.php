@@ -178,28 +178,32 @@ class quiz_stack_report extends quiz_attempts_report {
         // Overall results.
         $i=0;
         $list = '';
-        $tablehead = array('');
+        $tablehead = array();
         foreach ($this->qnotes as $qnote) {
             $list .= html_writer::tag('li', stack_ouput_castext($qnote));
             $i++;
             $tablehead[] = $i;
         }
         $tablehead[] = format_string(get_string('questionreportingtotal', 'quiz_stack'));
+        $tablehead = array_merge(array(''), $tablehead, $tablehead);
         echo html_writer::tag('ol', $list);
 
         // Complete anwernotes
+        $cstats = $this->column_stats($answernote_results);
         $inputstable = new html_table();
         $inputstable->head = $tablehead;
+        $data = array();
         foreach ($answernote_results as $anote => $a) {
-            $inputstable->data[] = array_merge(array($anote), $a, array(array_sum($a)));
+            $inputstable->data[] = array_merge(array($anote), $a, array(array_sum($a)), $cstats[$anote]);
         }
         echo html_writer::table($inputstable);
 
         // Split anwernotes
+        $cstats = $this->column_stats($answernote_results_raw);
         $inputstable = new html_table();
         $inputstable->head = $tablehead;
         foreach ($answernote_results_raw as $anote => $a) {
-            $inputstable->data[] = array_merge(array($anote), $a, array(array_sum($a)));
+            $inputstable->data[] = array_merge(array($anote), $a, array(array_sum($a)), $cstats[$anote]);
         }
         echo html_writer::table($inputstable);
 
@@ -266,7 +270,7 @@ class quiz_stack_report extends quiz_attempts_report {
                     $summary = $question->summarise_response($data);
 
                     $answernotes = array();
-                    foreach ($this->prts as $prt) {
+                    foreach ($this->prts as $prtname => $prt) {
                         $prt_object = $question->get_prt_result($prt, $data, true);
                         $raw_answernotes = $prt_object->__get('answernotes');
 
@@ -289,19 +293,18 @@ class quiz_stack_report extends quiz_attempts_report {
                     if (array_key_exists($summary, $results[$qnote])) {
                         if (array_key_exists($answernote_key, $results[$qnote][$summary])) {
                             $results[$qnote][$summary][$answernote_key]['count'] += 1;
-                        } else {
-                            $results[$qnote][$summary][$answernote_key]['count'] = 1;
-                            $results[$qnote][$summary][$answernote_key]['answernotes'] = $answernotes;
                             if ('' != $fraction) {
                                 $results[$qnote][$summary][$answernote_key]['fraction'] = $fraction;
                             }
+                        } else {
+                            $results[$qnote][$summary][$answernote_key]['count'] = 1;
+                            $results[$qnote][$summary][$answernote_key]['answernotes'] = $answernotes;
+                            $results[$qnote][$summary][$answernote_key]['fraction'] = $fraction;
                         }
                     } else {
                         $results[$qnote][$summary][$answernote_key]['count'] = 1;
                         $results[$qnote][$summary][$answernote_key]['answernotes'] = $answernotes;
-                                                if ('' != $fraction) {
-                                $results[$qnote][$summary][$answernote_key]['fraction'] = $fraction;
-                            }
+                        $results[$qnote][$summary][$answernote_key]['fraction'] = $fraction;
                     }
                 }
             }
@@ -380,7 +383,8 @@ class quiz_stack_report extends quiz_attempts_report {
         $any_data = false;
         $rdata = array();
         $step = $qattempt->get_step($i);
-        if ('question_state_todo' == get_class($step->get_state())) {
+        // TODO: work out which states need to be reported..
+        //if ('question_state_todo' == get_class($step->get_state())) {
             $data = $step->get_submitted_data();
             foreach ($this->inputs as $input) {
                 if (array_key_exists($input, $data)) {
@@ -391,7 +395,7 @@ class quiz_stack_report extends quiz_attempts_report {
             if ($any_data) {
                 return $rdata;
             }
-        }
+        //}
         return false;
     }
 
@@ -423,5 +427,28 @@ class quiz_stack_report extends quiz_attempts_report {
         array('class' => 'outcome generalfeedback')), array('class' => 'que'));
 
         echo $OUTPUT->heading(get_string('pluginname', 'quiz_stack'), 3);
+    }
+
+    /*
+     * Take an array of numbers and create an array containing %s for each column.
+     */
+    private function column_stats($data) {
+        $rdata = array();
+        foreach ($data as $anote => $a) {
+            $rdata[$anote] = array_merge(array_values($a), array(array_sum($a)));
+        }
+        reset($data);
+        $col_total = array_fill(0, count(next($data))+1, 0);
+        foreach ($rdata as $anote => $row) {
+            foreach ($row as $key => $col) {
+                $col_total[$key] += $col;
+            }
+        }
+        foreach ($rdata as $anote => $row) {
+            foreach ($row as $key => $col) {
+                $rdata[$anote][$key] = round(100*$col/$col_total[$key],1);
+            }
+        }
+        return $rdata;
     }
 }
