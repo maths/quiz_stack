@@ -262,7 +262,7 @@ class quiz_stack_report extends quiz_attempts_report {
             for ($i = 0; $i < $qattempt->get_num_steps(); $i++) {
                 $step = $qattempt->get_step($i);
                 if ($data = $this->nontrivial_response_step($qattempt, $i)) {
-                    $fraction = (string) $step->get_fraction();
+                    $fraction = trim((string) $step->get_fraction());
                     $summary = $question->summarise_response($data);
 
                     $answernotes = array();
@@ -292,12 +292,16 @@ class quiz_stack_report extends quiz_attempts_report {
                         } else {
                             $results[$qnote][$summary][$answernote_key]['count'] = 1;
                             $results[$qnote][$summary][$answernote_key]['answernotes'] = $answernotes;
-                            $results[$qnote][$summary][$answernote_key]['fraction'] = $fraction;
+                            if ('' != $fraction) {
+                                $results[$qnote][$summary][$answernote_key]['fraction'] = $fraction;
+                            }
                         }
                     } else {
                         $results[$qnote][$summary][$answernote_key]['count'] = 1;
                         $results[$qnote][$summary][$answernote_key]['answernotes'] = $answernotes;
-                        $results[$qnote][$summary][$answernote_key]['fraction'] = $fraction;
+                                                if ('' != $fraction) {
+                                $results[$qnote][$summary][$answernote_key]['fraction'] = $fraction;
+                            }
                     }
                 }
             }
@@ -376,15 +380,17 @@ class quiz_stack_report extends quiz_attempts_report {
         $any_data = false;
         $rdata = array();
         $step = $qattempt->get_step($i);
-        $data = $step->get_submitted_data();
-        foreach ($this->inputs as $input) {
-            if (array_key_exists($input, $data)) {
-                $any_data = true;
-                $rdata[$input] = $data[$input];
+        if ('question_state_todo' == get_class($step->get_state())) {
+            $data = $step->get_submitted_data();
+            foreach ($this->inputs as $input) {
+                if (array_key_exists($input, $data)) {
+                    $any_data = true;
+                    $rdata[$input] = $data[$input];
+                }
             }
-        }
-        if ($any_data) {
-            return $rdata;
+            if ($any_data) {
+                return $rdata;
+            }
         }
         return false;
     }
@@ -394,13 +400,13 @@ class quiz_stack_report extends quiz_attempts_report {
      */
     private function display_question_information($question) {
         global $OUTPUT;
+        $opts = $question->options;
 
         echo $OUTPUT->heading($question->name, 3);
 
         // Display the question variables.
         echo $OUTPUT->heading(stack_string('questionvariables'), 3);
         echo html_writer::start_tag('div', array('class' => 'questionvariables'));
-        $opts = $question->options;
         echo  html_writer::tag('pre', htmlspecialchars($opts->questionvariables));
         echo html_writer::end_tag('div');
 
@@ -410,6 +416,10 @@ class quiz_stack_report extends quiz_attempts_report {
 
         echo $OUTPUT->heading(stack_string('generalfeedback'), 3);
         echo html_writer::tag('div', html_writer::tag('div', stack_ouput_castext($question->generalfeedback),
+        array('class' => 'outcome generalfeedback')), array('class' => 'que'));
+
+        echo $OUTPUT->heading(stack_string('questionnote'), 3);
+        echo html_writer::tag('div', html_writer::tag('div', stack_ouput_castext($opts->questionnote),
         array('class' => 'outcome generalfeedback')), array('class' => 'que'));
 
         echo $OUTPUT->heading(get_string('pluginname', 'quiz_stack'), 3);
