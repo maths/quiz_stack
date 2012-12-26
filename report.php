@@ -232,11 +232,13 @@ class quiz_stack_report extends quiz_attempts_report {
             echo html_writer::table($inputstable);
 
             // Separate out inputs and look at validity.
+            $results_valid_data = array();
             foreach ($this->inputs as $input) {
                 $inputstable = new html_table();
                 $inputstable->attributes['class'] = 'generaltable stacktestsuite';
                 $inputstable->head = array($input, '', '');
                 foreach ($results_valid[$qnote][$input] as $key => $res) {
+                    $results_valid_data[$input][] = $key;
                     $inputstable->data[] = array($key, $res, get_string('inputstatusnamevalid', 'qtype_stack'));
                     $inputstable->rowclasses[] = 'pass';
                 }
@@ -247,6 +249,10 @@ class quiz_stack_report extends quiz_attempts_report {
                 echo html_writer::table($inputstable);
             }
 
+            // Maxima analysis.
+            foreach ($this->inputs as $input) {
+                $this->display_maxima_analysis($results_valid_data[$input]);
+            }
         }
 
     }
@@ -466,5 +472,41 @@ class quiz_stack_report extends quiz_attempts_report {
             }
         }
         return $rdata;
+    }
+
+
+    /*
+     * Sends all the valis inputs to Maxima to get a table of equivalent inputs.
+     */
+    private function display_maxima_analysis($data) {
+        if (empty($data)) {
+            return true;
+        }
+
+        $options = new stack_options();
+        $options->set_option('simplify', true);
+        $css = array(new stack_cas_casstring('A:[]'));
+        $concat_array=array();
+        foreach ($data as $val) {
+            $concat_array[] = $val;
+            $cct = implode($concat_array, ',');
+            // This ensures we don't have one session entry for each differnet input, leading to impossibly long sessions.
+            if (strlen($cct)>150) {
+                $cs = new stack_cas_casstring('A:append(A,['.$cct.'])');
+                $cs->validate('t');
+                $css[] = $cs;
+                $concat_array=array();
+            }
+        }
+        $cs = new stack_cas_casstring('A:append(A,['.$cct.'])');
+        $cs->validate('t');
+        $css[] = $cs;
+
+        $cs = new stack_cas_casstring('P:STACKanalysis(A)');
+        $cs->validate('t');
+        $css[] = $cs;
+        $session = new stack_cas_session($css, $options);
+
+        echo html_writer::tag('p', stack_ouput_castext('\['.$session->get_display_key('P').'\]'));
     }
 }
