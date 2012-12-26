@@ -249,10 +249,12 @@ class quiz_stack_report extends quiz_attempts_report {
                 echo html_writer::table($inputstable);
             }
 
+            /*  Comment out experimental code
             // Maxima analysis.
             foreach ($this->inputs as $input) {
                 $this->display_maxima_analysis($results_valid_data[$input]);
             }
+            */
         }
 
     }
@@ -405,16 +407,16 @@ class quiz_stack_report extends quiz_attempts_report {
         $step = $qattempt->get_step($i);
         // TODO: work out which states need to be reported..
         //if ('question_state_todo' == get_class($step->get_state())) {
-            $data = $step->get_submitted_data();
-            foreach ($this->inputs as $input) {
-                if (array_key_exists($input, $data)) {
-                    $any_data = true;
-                    $rdata[$input] = $data[$input];
-                }
+        $data = $step->get_submitted_data();
+        foreach ($this->inputs as $input) {
+            if (array_key_exists($input, $data)) {
+                $any_data = true;
+                $rdata[$input] = $data[$input];
             }
-            if ($any_data) {
-                return $rdata;
-            }
+        }
+        if ($any_data) {
+            return $rdata;
+        }
         //}
         return false;
     }
@@ -467,7 +469,7 @@ class quiz_stack_report extends quiz_attempts_report {
         foreach ($rdata as $anote => $row) {
             foreach ($row as $key => $col) {
                 if (0 != $col_total[$key]) {
-                    $rdata[$anote][$key] = round(100*$col/$col_total[$key],1);
+                    $rdata[$anote][$key] = round(100*$col/$col_total[$key], 1);
                 }
             }
         }
@@ -495,7 +497,7 @@ class quiz_stack_report extends quiz_attempts_report {
                 $cs = new stack_cas_casstring('A:append(A,['.$cct.'])');
                 $cs->validate('t');
                 $css[] = $cs;
-                $concat_array=array();
+                $concat_array = array();
             }
         }
         $cs = new stack_cas_casstring('A:append(A,['.$cct.'])');
