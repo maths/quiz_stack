@@ -189,21 +189,31 @@ class quiz_stack_report extends quiz_attempts_report {
         echo html_writer::tag('ol', $list);
 
         // Complete anwernotes
-        $cstats = $this->column_stats($answernote_results);
         $inputstable = new html_table();
         $inputstable->head = $tablehead;
         $data = array();
-        foreach ($answernote_results as $anote => $a) {
-            $inputstable->data[] = array_merge(array($anote), $a, array(array_sum($a)), $cstats[$anote]);
+        foreach ($answernote_results as $prt => $anotedata) {
+            if (count($answernote_results) > 1) {
+                $inputstable->data[] = array(html_writer::tag('b', $this->prts[$prt]));
+            }
+            $cstats = $this->column_stats($anotedata);
+            foreach ($anotedata as $anote => $a) {
+                $inputstable->data[] = array_merge(array($anote), $a, array(array_sum($a)), $cstats[$anote]);
+            }
         }
         echo html_writer::table($inputstable);
 
         // Split anwernotes
-        $cstats = $this->column_stats($answernote_results_raw);
         $inputstable = new html_table();
         $inputstable->head = $tablehead;
-        foreach ($answernote_results_raw as $anote => $a) {
-            $inputstable->data[] = array_merge(array($anote), $a, array(array_sum($a)), $cstats[$anote]);
+        foreach ($answernote_results_raw as $prt => $anotedata) {
+            if (count($answernote_results_raw) > 1) {
+                $inputstable->data[] = array(html_writer::tag('b', $this->prts[$prt]));
+            }
+            $cstats = $this->column_stats($anotedata);
+            foreach ($anotedata as $anote => $a) {
+                $inputstable->data[] = array_merge(array($anote), $a, array(array_sum($a)), $cstats[$anote]);
+            }
         }
         echo html_writer::table($inputstable);
 
@@ -254,6 +264,10 @@ class quiz_stack_report extends quiz_attempts_report {
         // splits up the results to look for which answernotes occur most often.
         $answernote_results = array();
         $answernote_results_raw = array();
+        foreach ($this->prts as $prtname => $prt) {
+            $answernote_results[$prtname] = array();
+            $answernote_results_raw[$prtname] = array();
+        }
         $answernote_empty_row = array();
         foreach ($this->qnotes as $qnote) {
             $answernote_empty_row[$qnote] = '';
@@ -266,7 +280,7 @@ class quiz_stack_report extends quiz_attempts_report {
             for ($i = 0; $i < $qattempt->get_num_steps(); $i++) {
                 $step = $qattempt->get_step($i);
                 if ($data = $this->nontrivial_response_step($qattempt, $i)) {
-                    $fraction = trim((string) $step->get_fraction());
+                    $fraction = trim((string) round($step->get_fraction(), 3));
                     $summary = $question->summarise_response($data);
 
                     $answernotes = array();
@@ -275,17 +289,17 @@ class quiz_stack_report extends quiz_attempts_report {
                         $raw_answernotes = $prt_object->__get('answernotes');
 
                         foreach ($raw_answernotes as $anote) {
-                            if (!array_key_exists($anote, $answernote_results_raw)) {
-                                $answernote_results_raw[$anote] = $answernote_empty_row;
+                            if (!array_key_exists($anote, $answernote_results_raw[$prtname])) {
+                                $answernote_results_raw[$prtname][$anote] = $answernote_empty_row;
                             }
-                            $answernote_results_raw[$anote][$qnote] += 1;
+                            $answernote_results_raw[$prtname][$anote][$qnote] += 1;
                         }
 
                         $answernotes[$prt] = implode(' | ', $raw_answernotes);
-                        if (!array_key_exists($answernotes[$prt], $answernote_results)) {
-                            $answernote_results[$answernotes[$prt]] = $answernote_empty_row;
+                        if (!array_key_exists($answernotes[$prt], $answernote_results[$prtname])) {
+                            $answernote_results[$prtname][$answernotes[$prt]] = $answernote_empty_row;
                         }
-                        $answernote_results[$answernotes[$prt]][$qnote] += 1;
+                        $answernote_results[$prtname][$answernotes[$prt]][$qnote] += 1;
                     }
 
                     $answernote_key = implode(' # ', $answernotes);
@@ -446,7 +460,9 @@ class quiz_stack_report extends quiz_attempts_report {
         }
         foreach ($rdata as $anote => $row) {
             foreach ($row as $key => $col) {
-                $rdata[$anote][$key] = round(100*$col/$col_total[$key],1);
+                if (0 != $col_total[$key]) {
+                    $rdata[$anote][$key] = round(100*$col/$col_total[$key],1);
+                }
             }
         }
         return $rdata;
