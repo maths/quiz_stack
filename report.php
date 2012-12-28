@@ -249,12 +249,14 @@ class quiz_stack_report extends quiz_attempts_report {
                 echo html_writer::table($inputstable);
             }
 
-            /*  Comment out experimental code
             // Maxima analysis.
+            $maxima_code = "display2d:true$\n";
             foreach ($this->inputs as $input) {
-                $this->display_maxima_analysis($results_valid_data[$input]);
+                $maxima_code .= $this->display_maxima_analysis($results_valid_data[$input], $input);
             }
-            */
+            $rows = 2*count($this->inputs) + 2;
+            echo html_writer::tag('textarea', $maxima_code,
+            array('readonly' => 'readonly', 'wrap' => 'virtual', 'rows'=>$rows, 'cols'=>'150'));
         }
 
     }
@@ -480,35 +482,30 @@ class quiz_stack_report extends quiz_attempts_report {
     /*
      * Sends all the valis inputs to Maxima to get a table of equivalent inputs.
      */
-    private function display_maxima_analysis($data) {
+    private function display_maxima_analysis($data, $input) {
         if (empty($data)) {
-            return true;
+            return '';
         }
 
-        $options = new stack_options();
-        $options->set_option('simplify', true);
-        $css = array(new stack_cas_casstring('A:[]'));
-        $concat_array=array();
+        $concat_array = array();
+        $toolong = false;
         foreach ($data as $val) {
             $concat_array[] = $val;
             $cct = implode($concat_array, ',');
             // This ensures we don't have one session entry for each differnet input, leading to impossibly long sessions.
             if (strlen($cct)>150) {
-                $cs = new stack_cas_casstring('A:append(A,['.$cct.'])');
-                $cs->validate('t');
-                $css[] = $cs;
+                $toolong = true;
+                $maxima_code .= $input.':append('.$input.',['.$cct."])$\n";
                 $concat_array = array();
             }
         }
-        $cs = new stack_cas_casstring('A:append(A,['.$cct.'])');
-        $cs->validate('t');
-        $css[] = $cs;
+        if ($toolong) {
+            $maxima_code = $input.":[]$\n".$maxima_code.$input.':append('.$input.',['.$cct."])$\n";
+        } else {
+            $maxima_code = $input.':['.$cct."]$\n";
+        }
 
-        $cs = new stack_cas_casstring('P:STACKanalysis(A)');
-        $cs->validate('t');
-        $css[] = $cs;
-        $session = new stack_cas_session($css, $options);
-
-        echo html_writer::tag('p', stack_ouput_castext('\['.$session->get_display_key('P').'\]'));
+        $maxima_code .= $input.'_a:STACKanalysis('.$input.");\n";
+        return $maxima_code;
     }
 }
