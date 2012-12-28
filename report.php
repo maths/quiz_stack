@@ -254,7 +254,7 @@ class quiz_stack_report extends quiz_attempts_report {
             foreach ($this->inputs as $input) {
                 $maxima_code .= $this->display_maxima_analysis($results_valid_data[$input], $input);
             }
-            $rows = 2*count($this->inputs) + 2;
+            $rows = count(explode("\n", $maxima_code)) + 2;
             echo html_writer::tag('textarea', $maxima_code,
             array('readonly' => 'readonly', 'wrap' => 'virtual', 'rows'=>$rows, 'cols'=>'150'));
         }
@@ -493,7 +493,7 @@ class quiz_stack_report extends quiz_attempts_report {
             $concat_array[] = $val;
             $cct = implode($concat_array, ',');
             // This ensures we don't have one session entry for each differnet input, leading to impossibly long sessions.
-            if (strlen($cct)>150) {
+            if (strlen($cct)>100) {
                 $toolong = true;
                 $maxima_code .= $input.':append('.$input.',['.$cct."])$\n";
                 $concat_array = array();
