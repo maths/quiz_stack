@@ -152,14 +152,20 @@ class quiz_stack_report extends quiz_attempts_report {
      */
     public function display_analysis($question) {
         get_question_options($question);
-
         $this->display_question_information($question);
 
         $dm = new question_engine_data_mapper();
         $this->attempts = $dm->load_attempts_at_question($question->id, $this->qubaids);
 
         // Setup useful internal arrays for report generation
-        $this->inputs = array_keys($question->inputs);
+        $inputs = array();
+        foreach ($question->inputs as $iname => $input) {
+             $inputclass = stack_input_factory::make($input->type, $iname, $input->tans);
+             // TODO: At this point we really need the actual teacher's answer.
+             //$inputclass->adapt_to_model_answer("matrix([0,0],[0,0])");
+             $inputs[$iname] = $inputclass;
+        }
+        $this->inputs = $inputs;
         $this->prts = array_keys($question->prts);
 
         // TODO: change this to be a list of all *deployed* notes, not just those *used*.
@@ -233,7 +239,7 @@ class quiz_stack_report extends quiz_attempts_report {
 
             // Separate out inputs and look at validity.
             $results_valid_data = array();
-            foreach ($this->inputs as $input) {
+            foreach (array_keys($this->inputs) as $input) {
                 $inputstable = new html_table();
                 $inputstable->attributes['class'] = 'generaltable stacktestsuite';
                 $inputstable->head = array($input, '', '');
@@ -251,12 +257,18 @@ class quiz_stack_report extends quiz_attempts_report {
 
             // Maxima analysis.
             $maxima_code = "display2d:true$\n";
-            foreach ($this->inputs as $input) {
-                $maxima_code .= $this->display_maxima_analysis($results_valid_data[$input], $input);
+            $anydata = false;
+            foreach (array_keys($this->inputs) as $input) {
+                if (array_key_exists($input, $results_valid_data)) {
+                    $maxima_code .= $this->display_maxima_analysis($results_valid_data[$input], $input);
+                    $anydata = true;
+                }
             }
-            $rows = count(explode("\n", $maxima_code)) + 2;
-            echo html_writer::tag('textarea', $maxima_code,
-            array('readonly' => 'readonly', 'wrap' => 'virtual', 'rows'=>$rows, 'cols'=>'150'));
+            if ($anydata) {
+                $rows = count(explode("\n", $maxima_code)) + 2;
+                echo html_writer::tag('textarea', $maxima_code,
+                array('readonly' => 'readonly', 'wrap' => 'virtual', 'rows'=>$rows, 'cols'=>'150'));
+            }
         }
 
     }
@@ -286,7 +298,6 @@ class quiz_stack_report extends quiz_attempts_report {
         foreach ($this->attempts as $qattempt) {
             $question = $qattempt->get_question();
             $qnote = $question->get_question_summary();
-
             for ($i = 0; $i < $qattempt->get_num_steps(); $i++) {
                 $step = $qattempt->get_step($i);
                 if ($data = $this->nontrivial_response_step($qattempt, $i)) {
@@ -345,7 +356,7 @@ class quiz_stack_report extends quiz_attempts_report {
         $results = array();
         $validity = array();
         foreach ($this->qnotes as $qnote) {
-            foreach ($this->inputs as $input) {
+            foreach (array_keys($this->inputs) as $input) {
                 $results[$qnote][$input] = array();
             }
         }
@@ -357,7 +368,7 @@ class quiz_stack_report extends quiz_attempts_report {
             for ($i = 0; $i < $qattempt->get_num_steps(); $i++) {
                 if ($data = $this->nontrivial_response_step($qattempt, $i)) {
                     $summary = $question->summarise_response_data($data);
-                    foreach ($this->inputs as $input) {
+                    foreach (array_keys($this->inputs) as $input) {
                         if (array_key_exists($input, $summary)) {
                             if ('' != $data[$input]) {
                                 if (array_key_exists($data[$input],  $results[$qnote][$input])) {
@@ -374,7 +385,7 @@ class quiz_stack_report extends quiz_attempts_report {
         }
 
         foreach ($this->qnotes as $qnote) {
-            foreach ($this->inputs as $input) {
+            foreach (array_keys($this->inputs) as $input) {
                 arsort($results[$qnote][$input]);
             }
         }
@@ -383,7 +394,7 @@ class quiz_stack_report extends quiz_attempts_report {
         $results_valid = array();
         $results_invalid = array();
         foreach ($this->qnotes as $qnote) {
-            foreach ($this->inputs as $input) {
+            foreach (array_keys($this->inputs) as $input) {
                 $results_valid[$qnote][$input] = array();
                 $results_invalid[$qnote][$input] = array();
                 foreach ($results[$qnote][$input] as $key => $res) {
@@ -410,10 +421,16 @@ class quiz_stack_report extends quiz_attempts_report {
         // TODO: work out which states need to be reported..
         //if ('question_state_todo' == get_class($step->get_state())) {
         $data = $step->get_submitted_data();
-        foreach ($this->inputs as $input) {
-            if (array_key_exists($input, $data)) {
+
+        foreach ($this->inputs as $iname => $input) {
+            // TODO this still does not work with matrices.
+            // We need to auto-detect the size of the matrix, and to do this we need
+            // to build the actual instantaited question.
+            $idata = $input->response_to_contents($data);
+            $mdata = $input->contents_to_maxima($idata);
+            if ('' != trim($mdata)) {
                 $any_data = true;
-                $rdata[$input] = $data[$input];
+                $rdata[$iname] = $mdata;
             }
         }
         if ($any_data) {
