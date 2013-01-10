@@ -158,20 +158,13 @@ class quiz_stack_report extends quiz_attempts_report {
         $this->attempts = $dm->load_attempts_at_question($question->id, $this->qubaids);
 
         // Setup useful internal arrays for report generation
-        $inputs = array();
-        foreach ($question->inputs as $iname => $input) {
-             $inputclass = stack_input_factory::make($input->type, $iname, $input->tans);
-             // TODO: At this point we really need the actual teacher's answer.
-             //$inputclass->adapt_to_model_answer("matrix([0,0],[0,0])");
-             $inputs[$iname] = $inputclass;
-        }
-        $this->inputs = $inputs;
+        $this->inputs = array_keys($question->inputs);
         $this->prts = array_keys($question->prts);
 
         // TODO: change this to be a list of all *deployed* notes, not just those *used*.
         $qnotes = array();
-        foreach ($this->attempts as $qattempt) {
-            $q = $qattempt->get_question();
+        foreach ($this->attempts as $qa) {
+            $q = $qa->get_question();
             $qnotes[$q->get_question_summary()] = true;
         }
         $this->qnotes = array_keys($qnotes);
@@ -243,7 +236,7 @@ class quiz_stack_report extends quiz_attempts_report {
 
             // Separate out inputs and look at validity.
             $results_valid_data = array();
-            foreach (array_keys($this->inputs) as $input) {
+            foreach ($this->inputs as $input) {
                 $inputstable = new html_table();
                 $inputstable->attributes['class'] = 'generaltable stacktestsuite';
                 $inputstable->head = array($input, '', '');
@@ -261,7 +254,7 @@ class quiz_stack_report extends quiz_attempts_report {
 
             // Maxima analysis.
             $maxima_code .= "\n/* ".$qnote.' */ '."\n";
-            foreach (array_keys($this->inputs) as $input) {
+            foreach ($this->inputs as $input) {
                 if (array_key_exists($input, $results_valid_data)) {
                     $maxima_code .= $this->display_maxima_analysis($results_valid_data[$input], $input);
                     $anymaximadata = true;
@@ -305,13 +298,14 @@ class quiz_stack_report extends quiz_attempts_report {
             $qnote = $question->get_question_summary();
             for ($i = 0; $i < $qattempt->get_num_steps(); $i++) {
                 $step = $qattempt->get_step($i);
+                $response = $step->get_submitted_data();
                 if ($data = $this->nontrivial_response_step($qattempt, $i)) {
                     $fraction = trim((string) round($step->get_fraction(), 3));
-                    $summary = $question->summarise_response($data);
+                    $summary = $question->summarise_response($response);
 
                     $answernotes = array();
                     foreach ($this->prts as $prtname => $prt) {
-                        $prt_object = $question->get_prt_result($prt, $data, true);
+                        $prt_object = $question->get_prt_result($prt, $response, true);
                         $raw_answernotes = $prt_object->__get('answernotes');
 
                         foreach ($raw_answernotes as $anote) {
@@ -361,7 +355,7 @@ class quiz_stack_report extends quiz_attempts_report {
         $results = array();
         $validity = array();
         foreach ($this->qnotes as $qnote) {
-            foreach (array_keys($this->inputs) as $input) {
+            foreach ($this->inputs as $input) {
                 $results[$qnote][$input] = array();
             }
         }
@@ -371,18 +365,20 @@ class quiz_stack_report extends quiz_attempts_report {
             $qnote = $question->get_question_summary();
 
             for ($i = 0; $i < $qattempt->get_num_steps(); $i++) {
+                $step = $qattempt->get_step($i);
+                $response = $step->get_submitted_data();
                 if ($data = $this->nontrivial_response_step($qattempt, $i)) {
-                    $summary = $question->summarise_response_data($data);
-                    foreach (array_keys($this->inputs) as $input) {
+                    $summary = $question->summarise_response_data($response);
+                    foreach ($this->inputs as $input) {
                         if (array_key_exists($input, $summary)) {
-                            if ('' != $data[$input]) {
-                                if (array_key_exists($data[$input],  $results[$qnote][$input])) {
-                                    $results[$qnote][$input][$data[$input]] += 1;
+                            if ('' != $data[$input]->contentsmodified) {
+                                if (array_key_exists($data[$input]->contentsmodified,  $results[$qnote][$input])) {
+                                    $results[$qnote][$input][$data[$input]->contentsmodified] += 1;
                                 } else {
-                                    $results[$qnote][$input][$data[$input]] = 1;
+                                    $results[$qnote][$input][$data[$input]->contentsmodified] = 1;
                                 }
                             }
-                            $validity[$qnote][$input][$data[$input]] = $summary[$input];
+                            $validity[$qnote][$input][$data[$input]->contentsmodified] = $data[$input]->status;
                         }
                     }
                 }
@@ -390,7 +386,7 @@ class quiz_stack_report extends quiz_attempts_report {
         }
 
         foreach ($this->qnotes as $qnote) {
-            foreach (array_keys($this->inputs) as $input) {
+            foreach ($this->inputs as $input) {
                 arsort($results[$qnote][$input]);
             }
         }
@@ -399,11 +395,11 @@ class quiz_stack_report extends quiz_attempts_report {
         $results_valid = array();
         $results_invalid = array();
         foreach ($this->qnotes as $qnote) {
-            foreach (array_keys($this->inputs) as $input) {
+            foreach ($this->inputs as $input) {
                 $results_valid[$qnote][$input] = array();
                 $results_invalid[$qnote][$input] = array();
                 foreach ($results[$qnote][$input] as $key => $res) {
-                    if ('valid' == $validity[$qnote][$input][$key]) {
+                    if ('valid' == $validity[$qnote][$input][$key] or 'score' == $validity[$qnote][$input][$key]) {
                         $results_valid[$qnote][$input][$key] = $res;
                     } else {
                         $results_invalid[$qnote][$input][$key] = $res;
@@ -419,26 +415,23 @@ class quiz_stack_report extends quiz_attempts_report {
      * From an individual attempt, we need to establish that step $i for this attempt is non-trivial, and return the non-trivial responses.
      * Otherwise we return boolean false
      */
-    protected function nontrivial_response_step($qattempt, $i) {
-        print_r($qattempt);
+    protected function nontrivial_response_step($qa, $i) {
         $any_data = false;
         $rdata = array();
-        $step = $qattempt->get_step($i);
+        $question = $qa->get_question();
+
         // TODO: work out which states need to be reported..
         //if ('question_state_todo' == get_class($step->get_state())) {
-        $data = $step->get_submitted_data();
+        $step = $qa->get_step($i);
+        $response = $step->get_submitted_data();
 
-        foreach ($this->inputs as $iname => $input) {
-            // TODO this still does not work with matrices.
-            // We need to auto-detect the size of the matrix, and to do this we need
-            // to build the actual instantaited question.
-            $idata = $input->response_to_contents($data);
-            $mdata = $input->contents_to_maxima($idata);
-            if ('' != trim($mdata)) {
+        foreach ($question->inputs as $iname => $input) {
+            $input_state = $question->get_input_state($iname, $response);
+            if ('' != trim($input_state->status)) {
                 $any_data = true;
             }
             // Ensure every input name has an entry in the $rdata array, even if it is empty.
-            $rdata[$iname] = $mdata;
+            $rdata[$iname] = $input_state;
 
         }
         if ($any_data) {
