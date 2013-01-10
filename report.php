@@ -223,6 +223,10 @@ class quiz_stack_report extends quiz_attempts_report {
         }
         echo html_writer::table($inputstable);
 
+        // Maxima analysis.
+        $maxima_code = "display2d:true$\n";
+        $anymaximadata = false;
+
         // Results for each question note
         foreach ($this->qnotes as $qnote) {
             echo html_writer::tag('h2', get_string('variantx', 'quiz_stack').stack_ouput_castext($qnote));
@@ -256,21 +260,22 @@ class quiz_stack_report extends quiz_attempts_report {
             }
 
             // Maxima analysis.
-            $maxima_code = "display2d:true$\n";
-            $anydata = false;
+            $maxima_code .= "\n/* ".$qnote.' */ '."\n";
             foreach (array_keys($this->inputs) as $input) {
                 if (array_key_exists($input, $results_valid_data)) {
                     $maxima_code .= $this->display_maxima_analysis($results_valid_data[$input], $input);
-                    $anydata = true;
+                    $anymaximadata = true;
                 }
-            }
-            if ($anydata) {
-                $rows = count(explode("\n", $maxima_code)) + 2;
-                echo html_writer::tag('textarea', $maxima_code,
-                array('readonly' => 'readonly', 'wrap' => 'virtual', 'rows'=>$rows, 'cols'=>'150'));
             }
         }
 
+        // Maxima analysis at the end.
+        if ($anymaximadata) {
+            $rows = count(explode("\n", $maxima_code)) + 2;
+            echo html_writer::tag('textarea', $maxima_code,
+                    array('readonly' => 'readonly', 'wrap' => 'virtual', 'rows'=>$rows, 'cols'=>'150'));
+        }
+        
     }
 
     /**
@@ -430,8 +435,10 @@ class quiz_stack_report extends quiz_attempts_report {
             $mdata = $input->contents_to_maxima($idata);
             if ('' != trim($mdata)) {
                 $any_data = true;
-                $rdata[$iname] = $mdata;
             }
+            // Ensure every input name has an entry in the $rdata array, even if it is empty.
+            $rdata[$iname] = $mdata;
+
         }
         if ($any_data) {
             return $rdata;
@@ -479,7 +486,7 @@ class quiz_stack_report extends quiz_attempts_report {
             $rdata[$anote] = array_merge(array_values($a), array(array_sum($a)));
         }
         reset($data);
-        $col_total = array_fill(0, count(next($data))+1, 0);
+        $col_total = array_fill(0, count(current($data))+1, 0);
         foreach ($rdata as $anote => $row) {
             foreach ($row as $key => $col) {
                 $col_total[$key] += $col;
