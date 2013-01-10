@@ -420,6 +420,7 @@ class quiz_stack_report extends quiz_attempts_report {
      * Otherwise we return boolean false
      */
     protected function nontrivial_response_step($qattempt, $i) {
+        print_r($qattempt);
         $any_data = false;
         $rdata = array();
         $step = $qattempt->get_step($i);
@@ -504,7 +505,7 @@ class quiz_stack_report extends quiz_attempts_report {
 
 
     /*
-     * Sends all the valis inputs to Maxima to get a table of equivalent inputs.
+     * Sends all the valid inputs to Maxima to get a table of equivalent inputs.
      */
     private function display_maxima_analysis($data, $input) {
         if (empty($data)) {
@@ -516,7 +517,7 @@ class quiz_stack_report extends quiz_attempts_report {
         foreach ($data as $val) {
             $concat_array[] = $val;
             $cct = implode($concat_array, ',');
-            // This ensures we don't have one session entry for each differnet input, leading to impossibly long sessions.
+            // This ensures we don't have one entry for each differenet input, leading to impossibly long sessions.
             if (strlen($cct)>100) {
                 $toolong = true;
                 $maxima_code .= $input.':append('.$input.',['.$cct."])$\n";
