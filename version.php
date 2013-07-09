@@ -22,15 +22,15 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-
 defined('MOODLE_INTERNAL') || die();
 
-
+$plugin->version   = 2013070900;
+$plugin->requires  = 2012120300;
+$plugin->cron      = 0;
 $plugin->component = 'quiz_stack';
-$plugin->version   = 2012122100;
-$plugin->requires  = 2012062500;
-$plugin->maturity  = MATURITY_ALPHA;
+$plugin->maturity  = MATURITY_STABLE;
+$plugin->release   = '3.1 for Moodle 2.4+';
 
 $plugin->dependencies = array(
-    'qtype_stack' => 2012122100
+    'qtype_stack' => 2013070900
 );

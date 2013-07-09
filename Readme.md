@@ -12,9 +12,6 @@ unzip it, and place it in the directory `moodle\mod\quiz\report\stack`.
 Alternatively, get the code using git by running the following command in the
 top level folder of your Moodle install:
 
-    git clone git://github.com/maths/quiz_stack.git mod/quiz/report/stack
+    git clone git@github.com:maths/quiz_stack.git mod/quiz/report/stack
 
 For full install instructions, see the [STACK install instructions](https://github.com/maths/moodle-qtype_stack/blob/master/doc/en/Installation/index.md).
-
-
-
