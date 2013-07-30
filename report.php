@@ -239,14 +239,14 @@ class quiz_stack_report extends quiz_attempts_report {
             foreach ($this->inputs as $input) {
                 $inputstable = new html_table();
                 $inputstable->attributes['class'] = 'generaltable stacktestsuite';
-                $inputstable->head = array($input, '', '');
+                $inputstable->head = array($input, '', '', '');
                 foreach ($results_valid[$qnote][$input] as $key => $res) {
                     $results_valid_data[$input][] = $key;
-                    $inputstable->data[] = array($key, $res, get_string('inputstatusnamevalid', 'qtype_stack'));
+                    $inputstable->data[] = array($key, $res, get_string('inputstatusnamevalid', 'qtype_stack'), '');
                     $inputstable->rowclasses[] = 'pass';
                 }
                 foreach ($results_invalid[$qnote][$input] as $key => $res) {
-                    $inputstable->data[] = array($key, $res, get_string('inputstatusnameinvalid', 'qtype_stack'));
+                    $inputstable->data[] = array($key, $res[0], get_string('inputstatusnameinvalid', 'qtype_stack'), $res[1]);
                     $inputstable->rowclasses[] = 'fail';
                 }
                 echo html_writer::table($inputstable);
@@ -378,7 +378,7 @@ class quiz_stack_report extends quiz_attempts_report {
                                     $results[$qnote][$input][$data[$input]->contentsmodified] = 1;
                                 }
                             }
-                            $validity[$qnote][$input][$data[$input]->contentsmodified] = $data[$input]->status;
+                            $validity[$qnote][$input][$data[$input]->contentsmodified] = array($data[$input]->status, $data[$input]->note);
                         }
                     }
                 }
@@ -399,10 +399,10 @@ class quiz_stack_report extends quiz_attempts_report {
                 $results_valid[$qnote][$input] = array();
                 $results_invalid[$qnote][$input] = array();
                 foreach ($results[$qnote][$input] as $key => $res) {
-                    if ('valid' == $validity[$qnote][$input][$key] or 'score' == $validity[$qnote][$input][$key]) {
+                    if ('valid' == $validity[$qnote][$input][$key][0] or 'score' == $validity[$qnote][$input][$key][0]) {
                         $results_valid[$qnote][$input][$key] = $res;
                     } else {
-                        $results_invalid[$qnote][$input][$key] = $res;
+                        $results_invalid[$qnote][$input][$key] = array($res, $validity[$qnote][$input][$key][1]);
                     }
                 }
             }
@@ -507,6 +507,7 @@ class quiz_stack_report extends quiz_attempts_report {
 
         $concat_array = array();
         $toolong = false;
+        $maxima_code = '';
         foreach ($data as $val) {
             $concat_array[] = $val;
             $cct = implode($concat_array, ',');
