@@ -29,9 +29,16 @@ $string['stack'] = 'STACK response analysis';
 $string['stack:componentname'] = 'STACK response analysis quiz report';
 $string['stack:view'] = 'View the STACK response analysis report';
 $string['stackquestionsinthisquiz'] = 'STACK questions in this quiz';
+$string['stackquestionsinthisquiz_descript'] = 'This page lists only STACK questions in the quiz, and provides access to data about attempts at individual versions of these questions.';
 
 $string['questionreporting'] = 'Report on attempts at one question.';
 $string['questionreportingscore'] = 'Score';
 $string['questionreportingsummary'] = 'Input summary';
 $string['questionreportingtotal'] = 'Total';
 $string['variantx'] = 'Variant: ';
+$string['notesused'] = 'These are the values of question notes used by students.  Numbers to the left are used to refer to these notes in the tables below.';
+$string['completenotes'] = 'This table is a summary of the frequency of each complete answer note (rows) for each question note (columns), both as a numerical frequency and as a percentage.  Each potential response tree is listed separately.';
+$string['splitnotes'] = 'This table is a summary of the frequency of each split answer note to show the frequency each branch of each tree is traversed.';
+
+$string['maximacode'] = 'Maxima code';
+$string['offlineanalysis'] = 'This code can be copied into Maxima for off-line analysis.';

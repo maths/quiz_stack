@@ -136,6 +136,7 @@ class quiz_stack_report extends quiz_attempts_report {
 
         $baseurl = $this->get_base_url();
         echo $OUTPUT->heading(get_string('stackquestionsinthisquiz', 'quiz_stack'));
+        echo html_writer::tag('p', get_string('stackquestionsinthisquiz_descript', 'quiz_stack'));
 
         echo html_writer::start_tag('ul');
         foreach ($questionsused as $question) {
@@ -172,6 +173,7 @@ class quiz_stack_report extends quiz_attempts_report {
         // Compute results
         list ($results, $answernote_results, $answernote_results_raw) = $this->input_report();
         list ($results_valid, $results_invalid) = $this->input_report_separate();
+
         // ** Display the results **
 
         // Overall results.
@@ -185,6 +187,8 @@ class quiz_stack_report extends quiz_attempts_report {
         }
         $tablehead[] = format_string(get_string('questionreportingtotal', 'quiz_stack'));
         $tablehead = array_merge(array(''), $tablehead, $tablehead);
+
+        echo html_writer::tag('p', get_string('notesused', 'quiz_stack'));
         echo html_writer::tag('ol', $list);
 
         // Complete anwernotes
@@ -200,6 +204,7 @@ class quiz_stack_report extends quiz_attempts_report {
                 $inputstable->data[] = array_merge(array($anote), $a, array(array_sum($a)), $cstats[$anote]);
             }
         }
+        echo html_writer::tag('p', get_string('completenotes', 'quiz_stack'));
         echo html_writer::table($inputstable);
 
         // Split anwernotes
@@ -214,10 +219,25 @@ class quiz_stack_report extends quiz_attempts_report {
                 $inputstable->data[] = array_merge(array($anote), $a, array(array_sum($a)), $cstats[$anote]);
             }
         }
+        echo html_writer::tag('p', get_string('splitnotes', 'quiz_stack'));
         echo html_writer::table($inputstable);
 
         // Maxima analysis.
-        $maxima_code = "display2d:true$\n";
+        $maxheader = array();
+        $maxheader[] = "STACK input data for the question '". $question->name."'";
+        $maxheader[] = new moodle_url($this->get_base_url(), array('questionid' => $question->id));
+        $maxheader[] = "Data generated: ".date("Y-m-d H:i:s");
+        $maxima_code = $this->maxima_comment($maxheader);
+        $maxima_code .= "\ndisplay2d:true$\nload(\"stackreporting\")$\n";
+        $maxima_code .= "stackdata:[]$\n";
+        $variants = array();
+        foreach ($this->qnotes as $qnote) {
+            $variants[] = '"'.$qnote.'"';
+        }
+        $inputs = array();
+        foreach ($this->inputs as $input) {
+            $inputs[] = $input;
+        }
         $anymaximadata = false;
 
         // Results for each question note
@@ -256,17 +276,24 @@ class quiz_stack_report extends quiz_attempts_report {
             $maxima_code .= "\n/* ".$qnote.' */ '."\n";
             foreach ($this->inputs as $input) {
                 if (array_key_exists($input, $results_valid_data)) {
-                    $maxima_code .= $this->display_maxima_analysis($results_valid_data[$input], $input);
+                    $maxima_code .= $this->maxima_list_create($results_valid_data[$input], $input);
                     $anymaximadata = true;
                 }
             }
+            
+            $maxima_code .= "stackdata:append(stackdata,[[" . implode(',', $inputs) . "]])$\n";
         }
 
         // Maxima analysis at the end.
         if ($anymaximadata) {
+            $maxima_code .= "\n/* Reset input names */\nkill(" . implode(',', $inputs) . ")$\n";
+            $maxima_code .= $this->maxima_list_create($variants, 'variants');
+            $maxima_code .= $this->maxima_list_create($inputs, 'inputs');
+            echo html_writer::tag('h3', get_string('maximacode', 'quiz_stack'));
+            echo html_writer::tag('p', get_string('offlineanalysis', 'quiz_stack'));
             $rows = count(explode("\n", $maxima_code)) + 2;
             echo html_writer::tag('textarea', $maxima_code,
-                    array('readonly' => 'readonly', 'wrap' => 'virtual', 'rows'=>$rows, 'cols'=>'150'));
+                    array('readonly' => 'readonly', 'wrap' => 'virtual', 'rows'=>$rows, 'cols'=>'160'));
         }
         
     }
@@ -497,10 +524,11 @@ class quiz_stack_report extends quiz_attempts_report {
     }
 
 
-    /*
-     * Sends all the valid inputs to Maxima to get a table of equivalent inputs.
+    /**
+     * Takes an array of $data and a $listname and creates maxima code for a list assigned to the name $listname.
+     * This splits up very long lists into reasonable size lists so as not to overflow maxima input.
      */
-    private function display_maxima_analysis($data, $input) {
+    private function maxima_list_create($data, $listname) {
         if (empty($data)) {
             return '';
         }
@@ -514,17 +542,43 @@ class quiz_stack_report extends quiz_attempts_report {
             // This ensures we don't have one entry for each differenet input, leading to impossibly long sessions.
             if (strlen($cct)>100) {
                 $toolong = true;
-                $maxima_code .= $input.':append('.$input.',['.$cct."])$\n";
+                $maxima_code .= $listname.':append('.$listname.',['.$cct."])$\n";
                 $concat_array = array();
             }
         }
         if ($toolong) {
-            $maxima_code = $input.":[]$\n".$maxima_code.$input.':append('.$input.',['.$cct."])$\n";
+            if (empty($concat_array)) {
+                $maxima_code = $listname.":[]$\n".$maxima_code;
+            } else {
+                $maxima_code = $listname.":[]$\n".$maxima_code.$listname.':append('.$listname.',['.$cct."])$\n";
+            }
         } else {
-            $maxima_code = $input.':['.$cct."]$\n";
+            $maxima_code = $listname.':['.$cct."]$\n";
         }
-
-        $maxima_code .= $input.'_a:STACKanalysis('.$input.");\n";
         return $maxima_code;
     }
+
+    /**
+     * Takes an array of strings and generates a formatted Maxima comment block.
+     */
+    private function maxima_comment($data) {
+        if (empty($data)) {
+            return '';
+        }
+
+        $l = 0;
+        foreach ($data as $k => $h) {
+            $l = max(strlen($h), $l);
+        }
+        $comment = str_pad('/**', $l+3, '*') . "**/\n";
+        $maxima_code = $comment;
+        foreach ($data as $k => $h) {
+            /* Warning: pad_str doesn't work here.. */
+            $offset = substr_count($h, '&')*4;
+            $maxima_code .= '/* '.$h.str_repeat(' ', $l-strlen($h)+$offset)." */\n";
+        }
+        $maxima_code .= $comment;
+        return $maxima_code;
+    }
+
 }
