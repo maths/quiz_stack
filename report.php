@@ -581,5 +581,4 @@ class quiz_stack_report extends quiz_attempts_report {
         $maxima_code .= $comment;
         return $maxima_code;
     }
-
 }
