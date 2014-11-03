@@ -47,7 +47,7 @@ Feature: Verify that there are no obvious errors when accessing the report
     And I press "Next"
     And I should see "Answer saved"
     And I press "Submit all and finish"
-    And I click on "Yes" "button" in the "Confirmation" "dialogue"
+    And I click on "Submit all and finish" "button" in the "Confirmation" "dialogue"
     And I should see "10.00 out of 10.00 (100%)"
     And I log out
 
