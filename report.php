@@ -581,7 +581,7 @@ class quiz_stack_report extends quiz_attempts_report {
         $maximacode = $comment;
         foreach ($data as $k => $h) {
             // Warning: pad_str doesn't work here.
-            $offset = substr_count($h, '&') * s4;
+            $offset = substr_count($h, '&') * 4;
             $maximacode .= '/* '.$h.str_repeat(' ', $l - strlen($h) + $offset)." */\n";
         }
         $maximacode .= $comment;
