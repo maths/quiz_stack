@@ -28,7 +28,7 @@ Feature: Verify that there are no obvious errors when accessing the report
     And I add a "STACK" question to the "Test STACK quiz" quiz with:
       | Question name      | Test STACK question                                                           |
       | Question variables | p : (x-1)^3;                                                                  |
-      | Question text      | Differentiate @p@ with respect to \\(x\\). [[input:ans1]] [[validation:ans1]] |
+      | Question text      | Differentiate @p@ with respect to \(x\). [[input:ans1]] [[validation:ans1]] |
       | Model answer       | diff(p,x)                                                                     |
       | SAns               | ans1                                                                          |
       | TAns               | diff(p,x)                                                                     |
@@ -40,11 +40,11 @@ Feature: Verify that there are no obvious errors when accessing the report
     And I press "Attempt quiz now"
     Then I should see "Question 1"
     And I should see "with respect to"
-    And I set the field "q1:1_ans1" to "3*(x-1)^2"
+    And I set the input "ans1" to "3*(x-1)^2" in the STACK question
     And I wait "2" seconds
     And I press "Check"
 
-    And I press "Next"
+    And I follow "Finish attempt ..."
     And I should see "Answer saved"
     And I press "Submit all and finish"
     And I click on "Submit all and finish" "button" in the "Confirmation" "dialogue"
@@ -62,8 +62,8 @@ Feature: Verify that there are no obvious errors when accessing the report
     And I should see "STACK questions in this quiz"
     When I follow "Test STACK question"
     Then I should see "p : (x-1)^3;"
-    And I should see "Differentiate @p@ with respect to \\(x\\). [[input:ans1]] [[validation:ans1]]"
+    And I should see "Differentiate @p@ with respect to \(x\). [[input:ans1]] [[validation:ans1]]"
     And I should see "prt1-1-T" in the "ans1: 3*(x-1)^2 [score]" "table_row"
     And I should see "ans1:[3*(x-1)^2]$"
-    And I should see "variants:[\"Differentiate @p@ with respect to \\(x\\). [[input:ans1]] [[validation:ans1]]\"]$"
+    And I should see "variants:[\"Differentiate @p@ with respect to \(x\). [[input:ans1]] [[validation:ans1]]\"]$"
     And I should see "inputs:[ans1]$"
