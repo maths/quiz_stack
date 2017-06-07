@@ -62,10 +62,11 @@ class quiz_stack_report extends quiz_attempts_report {
         $this->mode = 'stack';
         $this->context = context_module::instance($cm->id);
 
-        list($currentgroup, $students, $groupstudents, $allowed) =
-                $this->load_relevant_students($cm, $course);
+        list($currentgroup, $studentsjoins, $groupstudentsjoins, $allowedjoins) =
+                $this->get_students_joins($cm, $course);
 
-        $this->qubaids = quiz_statistics_qubaids_condition($quiz->id, $currentgroup, $groupstudents, true);
+        // QUIZ_GRADEAVERAGE includes all attempts, irrespective of which one determines the final grade.
+        $this->qubaids = quiz_statistics_qubaids_condition($quiz->id, $allowedjoins, QUIZ_GRADEAVERAGE, true);
 
         $questionsused = $this->get_stack_questions_used_in_attempt($this->qubaids);
 
