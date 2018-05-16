@@ -323,7 +323,7 @@ class quiz_stack_report extends quiz_attempts_report {
         }
         $answernoteemptyrow = array();
         foreach ($this->qnotes as $qnote) {
-            $answernoteemptyrow[$qnote] = '';
+            $answernoteemptyrow[$qnote] = 0;
         }
 
         foreach ($this->attempts as $qattempt) {
@@ -345,6 +345,7 @@ class quiz_stack_report extends quiz_attempts_report {
                             if (!array_key_exists($anote, $answernoteresultsraw[$prtname])) {
                                 $answernoteresultsraw[$prtname][$anote] = $answernoteemptyrow;
                             }
+                            var_dump($answernoteresultsraw[$prtname][$anote][$qnote]);
                             $answernoteresultsraw[$prtname][$anote][$qnote] += 1;
                         }
 

@@ -19,7 +19,7 @@ Feature: Verify that there are no obvious errors when accessing the report
       | student | C1     | student        |
 
     And I log in as "teacher"
-    And I follow "Course 1"
+    And I am on "Course 1" course homepage
     And I turn editing mode on
     And I add a "Quiz" to section "1" and I fill the form with:
       | Name                 | Test STACK quiz                               |
@@ -35,7 +35,7 @@ Feature: Verify that there are no obvious errors when accessing the report
     And I log out
 
     And I log in as "student"
-    And I follow "Course 1"
+    And I am on "Course 1" course homepage
     And I follow "Test STACK quiz"
     And I press "Attempt quiz now"
     Then I should see "Question 1"
@@ -52,7 +52,7 @@ Feature: Verify that there are no obvious errors when accessing the report
     And I log out
 
     And I log in as "teacher"
-    And I follow "Course 1"
+    And I am on "Course 1" course homepage
     And I follow "Test STACK quiz"
 
   @javascript
