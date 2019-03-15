@@ -57,7 +57,7 @@ Feature: Verify that there are no obvious errors when accessing the report
 
   @javascript
   Scenario: Access the STACK response analysis report
-    When I navigate to "STACK response analysis" node in "Quiz administration > Results"
+    When I navigate to "Results > STACK response analysis" in current page administration
     Then I should see "Test STACK quiz"
     And I should see "STACK questions in this quiz"
     When I follow "Test STACK question"
