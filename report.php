@@ -358,21 +358,26 @@ class quiz_stack_report extends quiz_attempts_report {
 
                     $answernotekey = implode(' # ', $answernotes);
 
+                    $counts = $step->has_behaviour_var('submit') ? 1 : 0;
+
                     if (array_key_exists($summary, $results[$qnote])) {
                         if (array_key_exists($answernotekey, $results[$qnote][$summary])) {
-                            $results[$qnote][$summary][$answernotekey]['count'] += 1;
+                            $results[$qnote][$summary][$answernotekey]['count'] += $counts;
                             if ('' != $fraction) {
                                 $results[$qnote][$summary][$answernotekey]['fraction'] = $fraction;
                             }
                         } else {
-                            $results[$qnote][$summary][$answernotekey]['count'] = 1;
+                            $results[$qnote][$summary][$answernotekey]['count'] = $counts;
                             $results[$qnote][$summary][$answernotekey]['answernotes'] = $answernotes;
                             $results[$qnote][$summary][$answernotekey]['fraction'] = $fraction;
                         }
                     } else {
-                        $results[$qnote][$summary][$answernotekey]['count'] = 1;
+                        $results[$qnote][$summary][$answernotekey]['count'] = $counts;
                         $results[$qnote][$summary][$answernotekey]['answernotes'] = $answernotes;
                         $results[$qnote][$summary][$answernotekey]['fraction'] = $fraction;
+                    }
+                    if(!array_key_exists('states',$results[$qnote][$summary][$answernotekey])) {
+                        $results[$qnote][$summary][$answernotekey]['states'] = '';
                     }
                 }
             }
@@ -400,6 +405,7 @@ class quiz_stack_report extends quiz_attempts_report {
 
             for ($i = 0; $i < $qattempt->get_num_steps(); $i++) {
                 $step = $qattempt->get_step($i);
+                $counts = $step->has_behaviour_var('submit') ? 1 : 0;
                 $response = $step->get_submitted_data();
                 if ($data = $this->nontrivial_response_step($qattempt, $i)) {
                     $summary = $question->summarise_response_data($response);
@@ -407,9 +413,9 @@ class quiz_stack_report extends quiz_attempts_report {
                         if (array_key_exists($input, $summary)) {
                             if ('' != $data[$input]->contentsmodified) {
                                 if (array_key_exists($data[$input]->contentsmodified,  $results[$qnote][$input])) {
-                                    $results[$qnote][$input][$data[$input]->contentsmodified] += 1;
+                                    $results[$qnote][$input][$data[$input]->contentsmodified] += $counts;
                                 } else {
-                                    $results[$qnote][$input][$data[$input]->contentsmodified] = 1;
+                                    $results[$qnote][$input][$data[$input]->contentsmodified] = $counts;
                                 }
                             }
                             $validity[$qnote][$input][$data[$input]->contentsmodified] =
