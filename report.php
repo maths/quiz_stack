@@ -553,7 +553,7 @@ class quiz_stack_report extends quiz_attempts_report {
         $maximacode = '';
         foreach ($data as $val) {
             $concatarray[] = $val;
-            $cct = implode($concatarray, ',');
+            $cct = implode(',', $concatarray);
             // This ensures we don't have one entry for each differenet input, leading to impossibly long sessions.
             if (strlen($cct) > 100) {
                 $toolong = true;
