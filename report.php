@@ -188,7 +188,7 @@ class quiz_stack_report extends quiz_attempts_report {
             $tablehead[] = $i;
         }
         $tablehead[] = format_string(get_string('questionreportingtotal', 'quiz_stack'));
-        $tablehead = array_merge(array(''), $tablehead, $tablehead);
+        $tablehead = array_merge([' '], $tablehead, $tablehead);
 
         echo html_writer::tag('p', get_string('notesused', 'quiz_stack'));
         echo html_writer::tag('ol', $list);
@@ -249,11 +249,11 @@ class quiz_stack_report extends quiz_attempts_report {
             $inputstable = new html_table();
             $inputstable->attributes['class'] = 'generaltable stacktestsuite';
             $inputstable->head = array_merge(
-                    array(
+                    [
                         get_string('questionreportingsummary', 'quiz_stack'),
-                        '',
+                        ' ',
                         get_string('questionreportingscore', 'quiz_stack')
-                    ), $this->prts);
+                    ], $this->prts);
             foreach ($results[$qnote] as $dsummary => $summary) {
                 foreach ($summary as $key => $res) {
                     $inputstable->data[] = array_merge(array($dsummary, $res['count'], $res['fraction']), $res['answernotes']);
@@ -266,7 +266,7 @@ class quiz_stack_report extends quiz_attempts_report {
             foreach ($this->inputs as $input) {
                 $inputstable = new html_table();
                 $inputstable->attributes['class'] = 'generaltable stacktestsuite';
-                $inputstable->head = array($input, '', '', '');
+                $inputstable->head = [$input, ' ', ' ', ' '];
                 foreach ($validresults[$qnote][$input] as $key => $res) {
                     $validresultsdata[$input][] = $key;
                     $inputstable->data[] = array($key, $res, get_string('inputstatusnamevalid', 'qtype_stack'), '');
@@ -511,7 +511,7 @@ class quiz_stack_report extends quiz_attempts_report {
 
         echo $OUTPUT->heading(stack_string('questionnote'), 3);
         echo html_writer::tag('div', html_writer::tag('div', stack_ouput_castext($opts->questionnote),
-        array('class' => 'outcome generalfeedback')), array('class' => 'que'));
+        ['class' => 'outcome generalfeedback']), ['class' => 'que mt-2 mb-5']);
 
         echo $OUTPUT->heading(get_string('pluginname', 'quiz_stack'), 3);
     }
