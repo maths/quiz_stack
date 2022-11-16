@@ -124,7 +124,7 @@ class quiz_stack_report extends quiz_attempts_report {
      * Display an error if the question id is unrecognised.
      */
     public function display_unknown_question() {
-        print_error('questiondoesnotexist', 'question');
+        throw new moodle_exception('questiondoesnotexist', 'question');
     }
 
     /**
@@ -142,7 +142,7 @@ class quiz_stack_report extends quiz_attempts_report {
         echo html_writer::start_tag('ul');
         foreach ($questionsused as $question) {
             echo html_writer::tag('li', html_writer::link(
-                    new moodle_url($baseurl, array('questionid' => $question->id)),
+                    new moodle_url($baseurl, ['questionid' => $question->id]),
                     format_string($question->name)));
         }
         echo html_writer::end_tag('ul');
@@ -165,7 +165,7 @@ class quiz_stack_report extends quiz_attempts_report {
         $this->prts = array_keys($question->prts);
 
         // TODO: change this to be a list of all *deployed* notes, not just those *used*.
-        $qnotes = array();
+        $qnotes = [];
         foreach ($this->attempts as $qa) {
             $q = $qa->get_question();
             $qnotes[$q->get_question_summary()] = true;
@@ -181,7 +181,7 @@ class quiz_stack_report extends quiz_attempts_report {
         // Overall results.
         $i = 0;
         $list = '';
-        $tablehead = array();
+        $tablehead = [];
         foreach ($this->qnotes as $qnote) {
             $list .= html_writer::tag('li', stack_ouput_castext($qnote));
             $i++;
@@ -196,14 +196,14 @@ class quiz_stack_report extends quiz_attempts_report {
         // Complete anwernotes.
         $inputstable = new html_table();
         $inputstable->head = $tablehead;
-        $data = array();
+
         foreach ($answernoteresults as $prt => $anotedata) {
             if (count($answernoteresults) > 1) {
-                $inputstable->data[] = array(html_writer::tag('b', $this->prts[$prt]));
+                $inputstable->data[] = [html_writer::tag('b', $this->prts[$prt])];
             }
             $cstats = $this->column_stats($anotedata);
             foreach ($anotedata as $anote => $a) {
-                $inputstable->data[] = array_merge(array($anote), $a, array(array_sum($a)), $cstats[$anote]);
+                $inputstable->data[] = array_merge([$anote], $a, [array_sum($a)], $cstats[$anote]);
             }
         }
         echo html_writer::tag('p', get_string('completenotes', 'quiz_stack'));
@@ -214,29 +214,29 @@ class quiz_stack_report extends quiz_attempts_report {
         $inputstable->head = $tablehead;
         foreach ($answernoteresultsraw as $prt => $anotedata) {
             if (count($answernoteresultsraw) > 1) {
-                $inputstable->data[] = array(html_writer::tag('b', $this->prts[$prt]));
+                $inputstable->data[] = [html_writer::tag('b', $this->prts[$prt])];
             }
             $cstats = $this->column_stats($anotedata);
             foreach ($anotedata as $anote => $a) {
-                $inputstable->data[] = array_merge(array($anote), $a, array(array_sum($a)), $cstats[$anote]);
+                $inputstable->data[] = array_merge([$anote], $a, [array_sum($a)], $cstats[$anote]);
             }
         }
         echo html_writer::tag('p', get_string('splitnotes', 'quiz_stack'));
         echo html_writer::table($inputstable);
 
         // Maxima analysis.
-        $maxheader = array();
+        $maxheader = [];
         $maxheader[] = "STACK input data for the question '". $question->name."'";
-        $maxheader[] = new moodle_url($this->get_base_url(), array('questionid' => $question->id));
+        $maxheader[] = new moodle_url($this->get_base_url(), ['questionid' => $question->id]);
         $maxheader[] = "Data generated: ".date("Y-m-d H:i:s");
         $maximacode = $this->maxima_comment($maxheader);
         $maximacode .= "\ndisplay2d:true$\nload(\"stackreporting\")$\n";
         $maximacode .= "stackdata:[]$\n";
-        $variants = array();
+        $variants = [];
         foreach ($this->qnotes as $qnote) {
             $variants[] = '"'.$qnote.'"';
         }
-        $inputs = array();
+        $inputs = [];
         foreach ($this->inputs as $input) {
             $inputs[] = $input;
         }
@@ -256,24 +256,24 @@ class quiz_stack_report extends quiz_attempts_report {
                     ], $this->prts);
             foreach ($results[$qnote] as $dsummary => $summary) {
                 foreach ($summary as $key => $res) {
-                    $inputstable->data[] = array_merge(array($dsummary, $res['count'], $res['fraction']), $res['answernotes']);
+                    $inputstable->data[] = array_merge([$dsummary, $res['count'], $res['fraction']], $res['answernotes']);
                 }
             }
             echo html_writer::table($inputstable);
 
             // Separate out inputs and look at validity.
-            $validresultsdata = array();
+            $validresultsdata = [];
             foreach ($this->inputs as $input) {
                 $inputstable = new html_table();
                 $inputstable->attributes['class'] = 'generaltable stacktestsuite';
                 $inputstable->head = [$input, ' ', ' ', ' '];
                 foreach ($validresults[$qnote][$input] as $key => $res) {
                     $validresultsdata[$input][] = $key;
-                    $inputstable->data[] = array($key, $res, get_string('inputstatusnamevalid', 'qtype_stack'), '');
+                    $inputstable->data[] = [$key, $res, get_string('inputstatusnamevalid', 'qtype_stack'), ''];
                     $inputstable->rowclasses[] = 'pass';
                 }
                 foreach ($invalidresults[$qnote][$input] as $key => $res) {
-                    $inputstable->data[] = array($key, $res[0], get_string('inputstatusnameinvalid', 'qtype_stack'), $res[1]);
+                    $inputstable->data[] = [$key, $res[0], get_string('inputstatusnameinvalid', 'qtype_stack'), $res[1]];
                     $inputstable->rowclasses[] = 'fail';
                 }
                 echo html_writer::table($inputstable);
@@ -301,7 +301,7 @@ class quiz_stack_report extends quiz_attempts_report {
             echo html_writer::tag('p', get_string('offlineanalysis', 'quiz_stack'));
             $rows = count(explode("\n", $maximacode)) + 2;
             echo html_writer::tag('textarea', $maximacode,
-                    array('readonly' => 'readonly', 'wrap' => 'virtual', 'rows' => $rows, 'cols' => '160'));
+                    ['readonly' => 'readonly', 'wrap' => 'virtual', 'rows' => $rows, 'cols' => '160']);
         }
     }
 
@@ -311,18 +311,18 @@ class quiz_stack_report extends quiz_attempts_report {
     protected function input_report() {
 
         // The array $results holds the by question note analysis.
-        $results = array();
+        $results = [];
         foreach ($this->qnotes as $qnote) {
-            $results[$qnote] = array();
+            $results[$qnote] = [];
         }
         // Splits up the results to look for which answernotes occur most often.
-        $answernoteresults = array();
-        $answernoteresultsraw = array();
+        $answernoteresults = [];
+        $answernoteresultsraw = [];
         foreach ($this->prts as $prtname => $prt) {
-            $answernoteresults[$prtname] = array();
-            $answernoteresultsraw[$prtname] = array();
+            $answernoteresults[$prtname] = [];
+            $answernoteresultsraw[$prtname] = [];
         }
-        $answernoteemptyrow = array();
+        $answernoteemptyrow = [];
         foreach ($this->qnotes as $qnote) {
             $answernoteemptyrow[$qnote] = 0;
         }
@@ -337,7 +337,7 @@ class quiz_stack_report extends quiz_attempts_report {
                     $fraction = trim((string) round($step->get_fraction(), 3));
                     $summary = $question->summarise_response($response);
 
-                    $answernotes = array();
+                    $answernotes = [];
                     foreach ($this->prts as $prtname => $prt) {
                         $prtobject = $question->get_prt_result($prt, $response, true);
                         $rawanswernotes = $prtobject->get_answernotes();
@@ -377,14 +377,14 @@ class quiz_stack_report extends quiz_attempts_report {
                         $results[$qnote][$summary][$answernotekey]['answernotes'] = $answernotes;
                         $results[$qnote][$summary][$answernotekey]['fraction'] = $fraction;
                     }
-                    if(!array_key_exists('states',$results[$qnote][$summary][$answernotekey])) {
+                    if (!array_key_exists('states', $results[$qnote][$summary][$answernotekey])) {
                         $results[$qnote][$summary][$answernotekey]['states'] = '';
                     }
                 }
             }
         }
 
-        return array($results, $answernoteresults, $answernoteresultsraw);
+        return [$results, $answernoteresults, $answernoteresultsraw];
     }
 
     /**
@@ -392,11 +392,11 @@ class quiz_stack_report extends quiz_attempts_report {
      */
     protected function input_report_separate() {
 
-        $results = array();
-        $validity = array();
+        $results = [];
+        $validity = [];
         foreach ($this->qnotes as $qnote) {
             foreach ($this->inputs as $input) {
-                $results[$qnote][$input] = array();
+                $results[$qnote][$input] = [];
             }
         }
 
@@ -420,7 +420,7 @@ class quiz_stack_report extends quiz_attempts_report {
                                 }
                             }
                             $validity[$qnote][$input][$data[$input]->contentsmodified] =
-                                    array($data[$input]->status, $data[$input]->note);
+                                    [$data[$input]->status, $data[$input]->note];
                         }
                     }
                 }
@@ -434,23 +434,23 @@ class quiz_stack_report extends quiz_attempts_report {
         }
 
         // Split into valid and invalid responses.
-        $validresults = array();
-        $invalidresults = array();
+        $validresults = [];
+        $invalidresults = [];
         foreach ($this->qnotes as $qnote) {
             foreach ($this->inputs as $input) {
-                $validresults[$qnote][$input] = array();
-                $invalidresults[$qnote][$input] = array();
+                $validresults[$qnote][$input] = [];
+                $invalidresults[$qnote][$input] = [];
                 foreach ($results[$qnote][$input] as $key => $res) {
-                    if ('valid' == $validity[$qnote][$input][$key][0] or 'score' == $validity[$qnote][$input][$key][0]) {
+                    if ('valid' == $validity[$qnote][$input][$key][0] || 'score' == $validity[$qnote][$input][$key][0]) {
                         $validresults[$qnote][$input][$key] = $res;
                     } else {
-                        $invalidresults[$qnote][$input][$key] = array($res, $validity[$qnote][$input][$key][1]);
+                        $invalidresults[$qnote][$input][$key] = [$res, $validity[$qnote][$input][$key][1]];
                     }
                 }
             }
         }
 
-        return array($validresults, $invalidresults);
+        return [$validresults, $invalidresults];
     }
 
     /**
@@ -460,11 +460,10 @@ class quiz_stack_report extends quiz_attempts_report {
      */
     protected function nontrivial_response_step($qa, $i) {
         $anydata = false;
-        $rdata = array();
+        $rdata = [];
         $question = $qa->get_question();
 
         // TODO: work out which states need to be reported.
-        // if ('question_state_todo' == get_class($step->get_state())) {
         $step = $qa->get_step($i);
         $response = $step->get_submitted_data();
 
@@ -480,7 +479,6 @@ class quiz_stack_report extends quiz_attempts_report {
         if ($anydata) {
             return $rdata;
         }
-        // }
         return false;
     }
 
@@ -495,7 +493,7 @@ class quiz_stack_report extends quiz_attempts_report {
 
         // Display the question variables.
         echo $OUTPUT->heading(stack_string('questionvariables'), 3);
-        echo html_writer::start_tag('div', array('class' => 'questionvariables'));
+        echo html_writer::start_tag('div', ['class' => 'questionvariables']);
         echo  html_writer::tag('pre', htmlspecialchars($opts->questionvariables));
         echo html_writer::end_tag('div');
 
@@ -520,9 +518,9 @@ class quiz_stack_report extends quiz_attempts_report {
      * Take an array of numbers and create an array containing %s for each column.
      */
     private function column_stats($data) {
-        $rdata = array();
+        $rdata = [];
         foreach ($data as $anote => $a) {
-            $rdata[$anote] = array_merge(array_values($a), array(array_sum($a)));
+            $rdata[$anote] = array_merge(array_values($a), [array_sum($a)]);
         }
         reset($data);
         $coltotal = array_fill(0, count(current($data)) + 1, 0);
@@ -551,7 +549,7 @@ class quiz_stack_report extends quiz_attempts_report {
             return '';
         }
 
-        $concatarray = array();
+        $concatarray = [];
         $toolong = false;
         $maximacode = '';
         foreach ($data as $val) {
@@ -561,7 +559,7 @@ class quiz_stack_report extends quiz_attempts_report {
             if (strlen($cct) > 100) {
                 $toolong = true;
                 $maximacode .= $listname.':append('.$listname.',['.$cct."])$\n";
-                $concatarray = array();
+                $concatarray = [];
             }
         }
         if ($toolong) {
