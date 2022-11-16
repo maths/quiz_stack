@@ -153,11 +153,12 @@ class quiz_stack_report extends quiz_attempts_report {
      * @param object $question the row from the question table for the question to analyse.
      */
     public function display_analysis($question) {
-        get_question_options($question);
-        $this->display_question_information($question);
 
         $dm = new question_engine_data_mapper();
         $this->attempts = $dm->load_attempts_at_question($question->id, $this->qubaids);
+
+        get_question_options($question);
+        $this->display_question_information($question);
 
         // Setup useful internal arrays for report generation.
         $this->inputs = array_keys($question->inputs);
@@ -339,7 +340,7 @@ class quiz_stack_report extends quiz_attempts_report {
                     $answernotes = array();
                     foreach ($this->prts as $prtname => $prt) {
                         $prtobject = $question->get_prt_result($prt, $response, true);
-                        $rawanswernotes = $prtobject->__get('answernotes');
+                        $rawanswernotes = $prtobject->get_answernotes();
 
                         foreach ($rawanswernotes as $anote) {
                             if (!array_key_exists($anote, $answernoteresultsraw[$prtname])) {
@@ -499,12 +500,14 @@ class quiz_stack_report extends quiz_attempts_report {
         echo html_writer::end_tag('div');
 
         echo $OUTPUT->heading(stack_string('questiontext'), 3);
-        echo html_writer::tag('div', html_writer::tag('div', stack_ouput_castext($question->questiontext),
-        array('class' => 'outcome generalfeedback')), array('class' => 'que'));
+        echo html_writer::tag('div', html_writer::tag('div',
+                $this->stack_ouput_castext_with_images($question, 'questiontext'),
+           ['class' => 'outcome generalfeedback']), ['class' => 'que mt-2 mb-5']);
 
         echo $OUTPUT->heading(stack_string('generalfeedback'), 3);
-        echo html_writer::tag('div', html_writer::tag('div', stack_ouput_castext($question->generalfeedback),
-        array('class' => 'outcome generalfeedback')), array('class' => 'que'));
+        echo html_writer::tag('div', html_writer::tag('div',
+                $this->stack_ouput_castext_with_images($question, 'generalfeedback'),
+        ['class' => 'outcome generalfeedback']), ['class' => 'que mt-2 mb-5']);
 
         echo $OUTPUT->heading(stack_string('questionnote'), 3);
         echo html_writer::tag('div', html_writer::tag('div', stack_ouput_castext($opts->questionnote),
@@ -594,5 +597,26 @@ class quiz_stack_report extends quiz_attempts_report {
         }
         $maximacode .= $comment;
         return $maximacode;
+    }
+
+    /**
+     * Return html content containing images for stack strings.
+     *
+     * @param object $question
+     * @param string $field
+     * @return string formatted string
+     */
+    protected function stack_ouput_castext_with_images($question, $field): string {
+
+        // Find the matching question attempt.
+        foreach ($this->attempts as $qattempt) {
+            if ($qattempt->get_question_id() == $question->id) {
+                $html = $qattempt->rewrite_pluginfile_urls($question->$field, 'question', $field, $question->id);
+            }
+        }
+        if (!$html) {
+            return '';
+        }
+        return stack_ouput_castext($html);
     }
 }
