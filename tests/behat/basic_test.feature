@@ -18,8 +18,7 @@ Feature: Verify that there are no obvious errors when accessing the report
       | teacher | C1     | editingteacher |
       | student | C1     | student        |
 
-    And I log in as "teacher"
-    And I am on "Course 1" course homepage
+    And I am on the "Course 1" "course" page logged in as teacher
     And I turn editing mode on
     And I add a "Quiz" to section "1" and I fill the form with:
       | Name                 | Test STACK quiz                               |
@@ -28,16 +27,15 @@ Feature: Verify that there are no obvious errors when accessing the report
     And I add a "STACK" question to the "Test STACK quiz" quiz with:
       | Question name      | Test STACK question                                                           |
       | Question variables | p : (x-1)^3;                                                                  |
-      | Question text      | Differentiate @p@ with respect to \(x\). [[input:ans1]] [[validation:ans1]] |
+      | Question text      | Differentiate @p@ with respect to \(x\). [[input:ans1]] [[validation:ans1]]   |
+      | Question note      | Differentiation of @p@ with respect to \(x\).                                 |
       | Model answer       | diff(p,x)                                                                     |
       | SAns               | ans1                                                                          |
       | TAns               | diff(p,x)                                                                     |
     And I log out
 
-    And I log in as "student"
-    And I am on "Course 1" course homepage
-    And I follow "Test STACK quiz"
-    And I press "Attempt quiz now"
+    And I am on the "Test STACK quiz" "quiz activity" page logged in as student
+    And I press "Attempt quiz"
     Then I should see "Question 1"
     And I should see "with respect to"
     And I set the input "ans1" to "3*(x-1)^2" in the STACK question
@@ -47,23 +45,20 @@ Feature: Verify that there are no obvious errors when accessing the report
     And I follow "Finish attempt ..."
     And I should see "Answer saved"
     And I press "Submit all and finish"
-    And I click on "Submit all and finish" "button" in the "Confirmation" "dialogue"
+    And I confirm the quiz submission for the STACK quiz report
     And I should see "10.00 out of 10.00 (100%)"
     And I log out
 
-    And I log in as "teacher"
-    And I am on "Course 1" course homepage
-    And I follow "Test STACK quiz"
-
   @javascript
   Scenario: Access the STACK response analysis report
-    When I navigate to "Results > STACK response analysis" in current page administration
+    When I am on the "Test STACK quiz" "quiz_stack > Report" page logged in as "teacher"
     Then I should see "Test STACK quiz"
     And I should see "STACK questions in this quiz"
-    When I follow "Test STACK question"
-    Then I should see "p : (x-1)^3;"
-    And I should see "Differentiate @p@ with respect to \(x\). [[input:ans1]] [[validation:ans1]]"
+    And I follow "Test STACK question"
+    And I should see "p : (x-1)^3;"
+    And I should see "Differentiate @p@ with respect to"
+    And I should see "[[input:ans1]] [[validation:ans1]]"
     And I should see "prt1-1-T" in the "ans1: 3*(x-1)^2 [score]" "table_row"
     And I should see "ans1:[3*(x-1)^2]$"
-    And I should see "variants:[\"Differentiate @p@ with respect to \(x\). [[input:ans1]] [[validation:ans1]]\"]$"
+    And I should see "variants:[\"Differentiation of @p@ with respect to \(x\).\"]$"
     And I should see "inputs:[ans1]$"

@@ -21,7 +21,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 namespace quiz_stack\privacy;
-defined('MOODLE_INTERNAL') || die();
+
 /**
  * Privacy Subsystem for quiz_stack implementing null_provider.
  *
