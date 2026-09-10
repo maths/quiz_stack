@@ -256,7 +256,7 @@ class quiz_stack_report extends quiz_attempts_report {
                     ], $this->prts);
             foreach ($results[$qnote] as $dsummary => $summary) {
                 foreach ($summary as $key => $res) {
-                    $inputstable->data[] = array_merge([$dsummary, $res['count'], $res['fraction']], $res['answernotes']);
+                    $inputstable->data[] = array_merge([s($dsummary), $res['count'], $res['fraction']], $res['answernotes']);
                 }
             }
             echo html_writer::table($inputstable);
@@ -269,11 +269,11 @@ class quiz_stack_report extends quiz_attempts_report {
                 $inputstable->head = [$input, ' ', ' ', ' '];
                 foreach ($validresults[$qnote][$input] as $key => $res) {
                     $validresultsdata[$input][] = $key;
-                    $inputstable->data[] = [$key, $res, get_string('inputstatusnamevalid', 'qtype_stack'), ''];
+                    $inputstable->data[] = [s($key), $res, get_string('inputstatusnamevalid', 'qtype_stack'), ''];
                     $inputstable->rowclasses[] = 'pass';
                 }
                 foreach ($invalidresults[$qnote][$input] as $key => $res) {
-                    $inputstable->data[] = [$key, $res[0], get_string('inputstatusnameinvalid', 'qtype_stack'), $res[1]];
+                    $inputstable->data[] = [s($key), $res[0], get_string('inputstatusnameinvalid', 'qtype_stack'), $res[1]];
                     $inputstable->rowclasses[] = 'fail';
                 }
                 echo html_writer::table($inputstable);
