@@ -24,7 +24,6 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once($CFG->dirroot . '/mod/quiz/report/attemptsreport.php');
 require_once($CFG->dirroot . '/mod/quiz/report/statistics/report.php');
 require_once($CFG->dirroot . '/question/type/stack/locallib.php');
 
@@ -35,7 +34,7 @@ require_once($CFG->dirroot . '/question/type/stack/locallib.php');
  * @copyright 2012 the University of Birmingham
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class quiz_stack_report extends quiz_attempts_report {
+class quiz_stack_report extends \mod_quiz\local\reports\attempts_report {
 
     /** @var The quiz context. */
     protected $context;
