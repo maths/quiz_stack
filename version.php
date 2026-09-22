@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->version   = 2014111200;
-$plugin->requires  = 2013101800;
+$plugin->requires  = 2023042400;
 $plugin->cron      = 0;
 $plugin->component = 'quiz_stack';
 $plugin->maturity  = MATURITY_STABLE;
